@@ -2,12 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SpaServices.Webpack;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Okta.Sdk;
+using Okta.Sdk.Configuration;
+using vuetest.Services;
 
 namespace vuetest
 {
@@ -30,6 +34,21 @@ namespace vuetest
         {
             // Add framework services.
             services.AddMvc();
+
+			services.AddSingleton<ITodoItemService, OktaTodoItemService>();
+			services.AddSingleton<IOktaClient>(new OktaClient(new OktaClientConfiguration
+			{
+				OrgUrl = "https://dev-595206.oktapreview.com",
+				Token = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+			}));
+
+			services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+			.AddJwtBearer(options =>
+			{
+				options.Authority = "https://dev-595206.oktapreview.com/oauth2/default";
+				options.Audience = "api://default";
+				options.RequireHttpsMetadata = false;
+			});
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -52,6 +71,8 @@ namespace vuetest
             }
 
             app.UseStaticFiles();
+			
+			app.UseAuthentication();
 
             app.UseMvc(routes =>
             {
